@@ -1,0 +1,55 @@
+[project]
+name = "spoonywaves"
+license = {text = "MIT License"}
+version = "1.1.2"
+description = "A wrapper around ffmpeg to make waveform visualizations from sound files."
+authors = [
+    {name = "Christian Syska", email = "christian@syska.me"}
+]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "ffmpeg-python>=0.2.0",
+    "pyinstaller>=6.13.0",
+    "pyinstaller-versionfile>=3.0.1",
+    "toml>=0.10.2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.3",
+]
+
+[project.scripts]
+spoonywaves = "src.main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=8.3.3",
+    "ruff>=0.11.12",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort (import sorting)
+]
+ignore = []
+
+[tool.ruff.lint.isort]
+known-first-party = ["src"]
+force-single-line = false
+combine-as-imports = true

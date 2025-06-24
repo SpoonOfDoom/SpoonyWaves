@@ -1,0 +1,16 @@
+{
+    "python.defaultInterpreter": "python",
+    "python.formatting.provider": "none",
+    "[python]": {
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit"
+        },
+        "editor.defaultFormatter": "charliermarsh.ruff"
+    },
+    "ruff.organizeImports": true,
+    "ruff.fixAll": true,
+    "files.associations": {
+        "*.py": "python"
+    }
+}
