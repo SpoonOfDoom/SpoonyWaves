@@ -1,0 +1,170 @@
+name: Build and Release SpoonyWaves
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      create_release:
+        description: 'Create GitHub Release'
+        required: true
+        default: true
+        type: boolean
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+        
+    - name: Install UV package manager
+      uses: astral-sh/setup-uv@v4
+      
+    - name: Install dependencies
+      run: uv sync
+      
+    - name: Install Inno Setup
+      run: |
+        $url = "https://jrsoftware.org/download.php/is.exe"
+        $output = "$env:TEMP\innosetup.exe"
+        Invoke-WebRequest -Uri $url -OutFile $output
+        Start-Process -FilePath $output -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART" -Wait
+        # Add Inno Setup to PATH
+        $innoPath = "${env:ProgramFiles(x86)}\Inno Setup 6"
+        echo "$innoPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+      shell: powershell
+      
+    - name: Get version from pyproject.toml
+      id: get_version
+      run: |
+        $content = Get-Content -Path "pyproject.toml" -Raw
+        if ($content -match 'version = "([^"]+)"') {
+          $version = $matches[1]
+          echo "version=$version" >> $env:GITHUB_OUTPUT
+          echo "Found version: $version"
+        } else {
+          echo "Could not extract version from pyproject.toml"
+          exit 1
+        }
+      shell: powershell
+      
+    - name: Clean previous builds
+      run: |
+        if (Test-Path "dist") { Remove-Item -Recurse -Force "dist" }
+        if (Test-Path "build") { Remove-Item -Recurse -Force "build" }
+      shell: powershell
+      
+    - name: Build executable with PyInstaller
+      run: uv run pyinstaller spoonywaves.spec
+      
+    - name: Verify executable was created
+      run: |
+        if (-not (Test-Path "dist\SpoonyWaves.exe")) {
+          echo "ERROR: Executable was not created!"
+          exit 1
+        }
+        echo "Executable created successfully"
+      shell: powershell
+      
+    - name: Update InnoSetup script paths for GitHub Actions
+      run: |
+        $issContent = Get-Content "installer\InnoSetupScript.iss" -Raw
+        # Replace absolute paths with relative paths
+        $issContent = $issContent -replace 'C:\\Users\\chris\\Documents\\Projects\\Privat\\SpoonyWaves\\', '..\\'
+        $issContent | Set-Content "installer\InnoSetupScript.iss"
+      shell: powershell
+      
+    - name: Build installer with Inno Setup
+      run: |
+        cd installer
+        iscc InnoSetupScript.iss
+        if (-not (Test-Path "Output\SpoonyWavesSetup.exe")) {
+          echo "ERROR: Installer was not created!"
+          exit 1
+        }
+        echo "Installer created successfully"
+      shell: powershell
+      
+    - name: Upload executable artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: spoonywaves-executable-v${{ steps.get_version.outputs.version }}
+        path: dist/SpoonyWaves.exe
+        
+    - name: Upload installer artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: spoonywaves-installer-v${{ steps.get_version.outputs.version }}
+        path: installer/Output/SpoonyWavesSetup.exe
+        
+    - name: Create Release - Executable
+      if: startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && github.event.inputs.create_release == 'true')
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: v${{ steps.get_version.outputs.version }}-exe
+        name: SpoonyWaves v${{ steps.get_version.outputs.version }} - Portable
+        body: |
+          ## SpoonyWaves v${{ steps.get_version.outputs.version }} - Portable (Executable Only)
+          
+          This release contains only the standalone executable file and can be used as a portable version for cli usage.
+          
+          ### Download
+          - `SpoonyWaves.exe` - Standalone executable (no installation required)
+          
+          ### Usage
+          Download the executable and run it directly. No installation required.
+          
+          ### System Requirements
+          - Windows 10/11 (64-bit)
+          - FFmpeg (will be prompted to install if not found)
+        files: |
+          dist/SpoonyWaves.exe
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Create Release - Installer
+      if: startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && github.event.inputs.create_release == 'true')
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: v${{ steps.get_version.outputs.version }}-installer
+        name: SpoonyWaves v${{ steps.get_version.outputs.version }} - Installer
+        body: |
+          ## SpoonyWaves v${{ steps.get_version.outputs.version }} - Full Installer
+          
+          This release contains the complete Windows installer package.
+          
+          ### Download
+          - `SpoonyWavesSetup.exe` - Windows installer package
+          
+          ### Installation
+          1. Download `SpoonyWavesSetup.exe`
+          2. Run the installer as administrator
+          3. Follow the installation wizard
+          4. SpoonyWaves will be installed and available in your Start Menu
+          
+          ### System Requirements
+          - Windows 10/11 (64-bit)
+          - Administrator privileges for installation
+          - FFmpeg (will be prompted to install if not found)
+          
+          ### Features
+          - Automatic installation to Program Files
+          - Start Menu shortcuts
+          - Registry integration
+          - Uninstaller included
+        files: |
+          installer/Output/SpoonyWavesSetup.exe
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
