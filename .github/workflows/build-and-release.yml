@@ -105,7 +105,7 @@ jobs:
         name: spoonywaves-installer-v${{ steps.get_version.outputs.version }}
         path: installer/Output/SpoonyWavesSetup.exe
         
-    - name: Create Release - Executable
+    - name: Create Release
       if: startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && github.event.inputs.create_release == 'true')
       uses: ncipollo/release-action@v1.16.0
       with:
@@ -113,57 +113,35 @@ jobs:
         generateReleaseNotes: true
         makeLatest: true
         skipIfReleaseExists: true
-        name: SpoonyWaves v${{ steps.get_version.outputs.version }} - Portable
+        name: SpoonyWaves v${{ steps.get_version.outputs.version }}
         body: |
-          ## SpoonyWaves v${{ steps.get_version.outputs.version }} - Portable (Executable Only)
+          ## SpoonyWaves v${{ steps.get_version.outputs.version }}
           
-          This release contains only the standalone executable file and can be used as a portable version for cli usage.
+          ### Download Options
           
-          ### Download
+          **🚀 Portable Version (Recommended for CLI usage)**
           - `SpoonyWaves.exe` - Standalone executable (no installation required)
+          - Simply download and run directly
           
-          ### Usage
-          Download the executable and run it directly. No installation required.
+          **📦 Installer Version (Recommended for GUI integration)**
+          - `SpoonyWavesSetup.exe` - Windows installer package
+          - Includes Start Menu shortcuts and registry integration
+          - Requires administrator privileges
           
           ### System Requirements
           - Windows 10/11 (64-bit)
           - FFmpeg (will be prompted to install if not found)
+          
+          ### Installation Instructions
+          
+          **Portable Version:**
+          1. Download `SpoonyWaves.exe`
+          2. Run directly - no installation required
+          
+          **Installer Version:**
+          1. Download `SpoonyWavesSetup.exe`
+          2. Follow the installation wizard
         artifacts: |
           dist/SpoonyWaves.exe
-        
-    - name: Create Release - Installer
-      if: startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && github.event.inputs.create_release == 'true')
-      uses: ncipollo/release-action@v1.16.0
-      with:
-        artifactErrorsFailBuild: true
-        generateReleaseNotes: true
-        makeLatest: true
-        skipIfReleaseExists: true
-        name: SpoonyWaves v${{ steps.get_version.outputs.version }} - Installer
-        body: |
-          ## SpoonyWaves v${{ steps.get_version.outputs.version }} - Full Installer
-          
-          This release contains the complete Windows installer package.
-          
-          ### Download
-          - `SpoonyWavesSetup.exe` - Windows installer package
-          
-          ### Installation
-          1. Download `SpoonyWavesSetup.exe`
-          2. Run the installer as administrator
-          3. Follow the installation wizard
-          4. SpoonyWaves will be installed and available in your Start Menu
-          
-          ### System Requirements
-          - Windows 10/11 (64-bit)
-          - Administrator privileges for installation
-          - FFmpeg (will be prompted to install if not found)
-          
-          ### Features
-          - Automatic installation to Program Files
-          - Start Menu shortcuts
-          - Registry integration
-          - Uninstaller included
-        artifacts: |
           installer/Output/SpoonyWavesSetup.exe
         
