@@ -107,9 +107,12 @@ jobs:
         
     - name: Create Release - Executable
       if: startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && github.event.inputs.create_release == 'true')
-      uses: softprops/action-gh-release@v2
+      uses: ncipollo/release-action@v1.16.0
       with:
-        tag_name: v${{ steps.get_version.outputs.version }}-exe
+        artifactErrorsFailBuild: true
+        generateReleaseNotes: true
+        makeLatest: true
+        skipIfReleaseExists: true
         name: SpoonyWaves v${{ steps.get_version.outputs.version }} - Portable
         body: |
           ## SpoonyWaves v${{ steps.get_version.outputs.version }} - Portable (Executable Only)
@@ -125,18 +128,17 @@ jobs:
           ### System Requirements
           - Windows 10/11 (64-bit)
           - FFmpeg (will be prompted to install if not found)
-        files: |
+        artifacts: |
           dist/SpoonyWaves.exe
-        draft: false
-        prerelease: false
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         
     - name: Create Release - Installer
       if: startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && github.event.inputs.create_release == 'true')
-      uses: softprops/action-gh-release@v2
+      uses: ncipollo/release-action@v1.16.0
       with:
-        tag_name: v${{ steps.get_version.outputs.version }}-installer
+        artifactErrorsFailBuild: true
+        generateReleaseNotes: true
+        makeLatest: true
+        skipIfReleaseExists: true
         name: SpoonyWaves v${{ steps.get_version.outputs.version }} - Installer
         body: |
           ## SpoonyWaves v${{ steps.get_version.outputs.version }} - Full Installer
@@ -162,9 +164,6 @@ jobs:
           - Start Menu shortcuts
           - Registry integration
           - Uninstaller included
-        files: |
+        artifacts: |
           installer/Output/SpoonyWavesSetup.exe
-        draft: false
-        prerelease: false
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
